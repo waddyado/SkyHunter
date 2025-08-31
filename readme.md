@@ -1,55 +1,64 @@
 # SKYHUNTER — Drone RF Detector (HackRF, Python TUI)
 
-A fast, live drone RF detector for DJI (OFDM) and analog FPV signals using HackRF.  
-It streams IQ via a lightweight `libhackrf.py` wrapper, computes PSD (Welch), and raises alerts in a terminal UI.
-
-- **DJI detection:** 10–40 MHz “plateau” with persistence filtering  
-- **FPV detection:** 4–12 MHz analog spike (plus a simple floor-rise rule)  
-- **Fast sweep:** ~7 s per 5.8 GHz band by default (20 MS/s, overlap 0.75, dwell 0.4 s)  
-- **TUI:** curses interface (or a simple status line if curses isn’t available)  
+**SKYHUNTER** is a fast, live drone RF detector designed for detecting DJI (OFDM) and analog FPV signals using HackRF.  
+It streams IQ data via a lightweight `libhackrf.py` wrapper, computes Power Spectral Density (Welch method), and raises alerts in a terminal UI.
 
 ---
 
-## Contents
+## ✨ Features
 
-- [Prerequisites](#prerequisites)
-  - [Hardware](#hardware)
-  - [OS & drivers](#os--drivers)
-  - [Python](#python)
-- [Install](#install)
-  - [Ubuntu / Debian (native Linux)](#ubuntu--debian-native-linux)
-  - [Windows using WSL 2 (recommended for Windows)](#windows-using-wsl-2-recommended-for-windows)
-  - [Python env & packages](#python-env--packages)
-  - [Verify HackRF](#verify-hackrf)
-- [Run SKYHUNTER](#run-skyhunter)
-  - [Quick starts](#quick-starts)
-  - [All CLI options](#all-cli-options)
-- [How it works](#how-it-works)
-- [Troubleshooting](#troubleshooting)
-- [Tips](#tips)
-- [Acknowledgements](#acknowledgements)
+- **DJI Detection**: Identifies 10–40 MHz “plateaus” with persistence filtering.  
+- **FPV Detection**: Detects 4–12 MHz analog spikes with a floor-rise rule.  
+- **Fast Sweeping**: ~7 seconds per full 5.8 GHz band at default settings (20 MS/s, overlap 0.75, dwell 0.4 s).  
+- **Terminal UI**: Interactive curses-based UI with fallback to a simple status line.  
 
 ---
 
-## Prerequisites
+## 📖 Table of Contents
+
+1. [Prerequisites](#-prerequisites)  
+   - [Hardware](#hardware)  
+   - [OS & Drivers](#os--drivers)  
+   - [Python](#python)  
+2. [Install](#-install)  
+   - [Ubuntu / Debian (native Linux)](#ubuntu--debian-native-linux)  
+   - [Windows using WSL 2](#windows-using-wsl-2-recommended-for-windows)  
+   - [Python Environment & Packages](#python-env--packages)  
+   - [Verify HackRF](#verify-hackrf)  
+3. [Running SKYHUNTER](#-run-skyhunter)  
+   - [Quick Starts](#quick-starts)  
+   - [All CLI Options](#all-cli-options)  
+4. [How It Works](#-how-it-works)  
+5. [Troubleshooting](#-troubleshooting)  
+6. [Tips](#-tips)  
+7. [Acknowledgements](#-acknowledgements)  
+
+---
+
+## 🔧 Prerequisites
 
 ### Hardware
-- HackRF One (or compatible) with USB cable.  
-- An antenna suitable for 2.4 GHz and/or 5.8 GHz.  
+- HackRF One (or compatible SDR).  
+- USB cable.  
+- Antenna suitable for **2.4 GHz** and/or **5.8 GHz**.  
 
-### OS & drivers
-- Linux (Ubuntu 22.04+ recommended) **OR** Windows 10/11 with WSL 2.  
-- HackRF tools & `libhackrf` installed on the environment where Python runs.  
+### OS & Drivers
+- **Linux:** Ubuntu 22.04+ recommended.  
+- **Windows:** Windows 10/11 with WSL 2.  
+- HackRF tools and `libhackrf` must be installed in the same environment where Python runs.  
 
 ### Python
-- Python 3.10+ recommended.  
-- Packages: `numpy`, `scipy`, and on Windows terminals `windows-curses`.  
+- Python **3.10+** recommended.  
+- Required packages:  
+  - `numpy`  
+  - `scipy`  
+  - `windows-curses` (Windows only, for TUI support)  
 
 ---
 
-## Install
+## 💻 Install
 
-### Ubuntu / Debian (native Linux)
+### Ubuntu / Debian (Native Linux)
 
 ```bash
 sudo apt update
@@ -58,64 +67,60 @@ sudo apt install -y hackrf libhackrf0 libhackrf-dev python3 python3-venv python3
 sudo apt install -y usbutils
 ```
 
-#### Udev rules (native Linux only) to avoid `sudo` for device access:
+#### Udev Rules (to avoid `sudo` for device access)
 ```bash
 sudo bash -c 'groupadd -f plugdev && usermod -aG plugdev $SUDO_USER && printf "%s\n" \'SUBSYSTEM=="usb", ATTR{idVendor}=="1d50", ATTR{idProduct}=="6089", MODE="0666", GROUP="plugdev"\' > /etc/udev/rules.d/52-hackrf.rules && udevadm control --reload-rules && udevadm trigger'
 ```
-*Log out/in so your group membership updates.*
+👉 *Log out and back in to refresh group membership.*
 
 ---
 
-### Windows using WSL 2 (recommended for Windows)
+### Windows using WSL 2 (Recommended)
 
-1. Install WSL (if not already) and Ubuntu from MS Store:
+1. Install WSL & Ubuntu:  
    ```bash
    wsl --install -d Ubuntu
    ```
 
-2. Install `usbipd-win` (share USB devices to WSL):  
-   - Download & install from Microsoft (search “usbipd-win GitHub”).  
+2. Install `usbipd-win` (for USB passthrough). Download from Microsoft’s GitHub.  
 
-3. In **PowerShell (Admin):**
+3. In **PowerShell (Admin)**:  
    ```powershell
    usbipd wsl list
-   usbipd wsl attach --busid <BUSID>   # pick the line that shows HackRF
+   usbipd wsl attach --busid <BUSID>
    ```
 
-4. Inside Ubuntu/WSL, install packages:
+4. Inside WSL/Ubuntu:  
    ```bash
    sudo apt update
    sudo apt install -y hackrf libhackrf0 libhackrf-dev python3 python3-venv python3-pip
    ```
 
-*Note: Udev rules aren’t strictly needed for WSL with usbipd, but they don’t hurt.*
-
 ---
 
-### Python env & packages
+### Python Environment & Packages
 
-From your project folder (where `skyhunter.py` will live):
+From your project folder:
 
 ```bash
 python3 -m venv drone-env
-source drone-env/bin/activate    # (on Windows/WSL bash)
+source drone-env/bin/activate   # On Windows: use WSL bash
 pip install --upgrade pip
 pip install numpy scipy
 ```
 
-On Windows terminal (PowerShell/CMD), if you want curses TUI:
+For Windows TUI support:
 ```powershell
 pip install windows-curses
 ```
 
-**Important:** This project uses a local file `libhackrf.py` as a Python wrapper for `libhackrf`.  
-Place `libhackrf.py` in the same directory as `skyhunter.py`.
+⚠️ **Important:** Place `libhackrf.py` in the same directory as `skyhunter.py`.
 
 ---
 
 ### Verify HackRF
 
-Make sure your system sees the HackRF and the library works.
+Check that your HackRF is visible:
 
 ```bash
 # Hardware visibility
@@ -125,65 +130,64 @@ lsusb | grep -E '1d50:6089|HackRF' || echo "No HackRF found"
 hackrf_info
 ```
 
-You should see **"Found HackRF"** and device details.  
-If not, see [Troubleshooting](#troubleshooting).
+You should see **“Found HackRF”** and device details.  
 
 ---
 
-## Run SKYHUNTER
+## 🚀 Run SKYHUNTER
 
 ### Files
-- `skyhunter.py` — the main program  
-- `libhackrf.py` — the local Python wrapper (must be in the same folder)  
+- `skyhunter.py` → Main program.  
+- `libhackrf.py` → Local Python wrapper (must be in the same folder).  
 
 ---
 
-### Quick starts
+### Quick Starts
 
-FPV 5.8 GHz sweep (floor alert ON by default at +10 dB):
-```bash
-python skyhunter.py --auto fpv
-```
+- **FPV 5.8 GHz sweep** (default +10 dB floor alert):  
+  ```bash
+  python skyhunter.py --auto fpv
+  ```
 
-DJI (2.4 GHz + 5.8 GHz) sweep:
-```bash
-python skyhunter.py --auto dji
-```
+- **DJI 2.4 + 5.8 GHz sweep**:  
+  ```bash
+  python skyhunter.py --auto dji
+  ```
 
-All bands (FPV 5.8 + DJI 2.4/5.8):
-```bash
-python skyhunter.py --auto all
-```
+- **All bands (FPV + DJI)**:  
+  ```bash
+  python skyhunter.py --auto all
+  ```
 
-Speed up or slow down sweep (default ~7 s per full 5.8 band):
-```bash
-python skyhunter.py --auto fpv --dwell 0.3 --center-overlap 0.75
-```
+- **Faster sweep**:  
+  ```bash
+  python skyhunter.py --auto fpv --dwell 0.3 --center-overlap 0.75
+  ```
 
-Disable floor alert:
-```bash
-python skyhunter.py --no-floor-alert
-```
+- **Disable floor alert**:  
+  ```bash
+  python skyhunter.py --no-floor-alert
+  ```
 
-Adjust gains:
-```bash
-python skyhunter.py --lna 32 --vga 30
-```
+- **Adjust gains**:  
+  ```bash
+  python skyhunter.py --lna 32 --vga 30
+  ```
 
-Enable RF front-end amp (≈14 dB) on HackRF:
-```bash
-python skyhunter.py --amp
-```
+- **Enable HackRF RF amp (≈14 dB)**:  
+  ```bash
+  python skyhunter.py --amp
+  ```
 
-When an RF signal is detected, the Recent Events pane shows:
+When an RF signal is detected, you’ll see logs such as:
 ```
-[ALERT] DJI Detected @ <freq> MHz ~<width> MHz (mean +X dB, peak +Y dB)
-[ALERT] FPV Detected @ <freq> MHz Peak <dB> ~<width> MHz (from floor rule or analog detector)
+[ALERT] DJI Detected @ 2435 MHz ~18 MHz (mean +9 dB, peak +15 dB)
+[ALERT] FPV Detected @ 5800 MHz Peak +14 dB ~8 MHz
 ```
 
 ---
 
-### All CLI options
+### All CLI Options
 
 ```text
 usage: skyhunter.py [-h] [--device-index DEVICE_INDEX] [--amp] [--lna LNA] [--vga VGA]
@@ -198,66 +202,55 @@ usage: skyhunter.py [-h] [--device-index DEVICE_INDEX] [--amp] [--lna LNA] [--vg
                     [--auto {fpv,dji,all}]
 ```
 
-**Key defaults:**
+**Defaults:**
 - Sweep: `--sample-rate 20e6`, `--dwell 0.4`, `--center-overlap 0.75`  
-- Floor rule: enabled, `--floor-alert-rise-db 10`, `--floor-persist-hits 2`  
-- DJI detector: width 10–40 MHz, mean excess ≥ 8 dB  
-- FPV detector: width 4–12 MHz, peak excess ≥ 12 dB or mean excess ≥ 6 dB  
+- Floor rule: `--floor-alert-rise-db 10`, `--floor-persist-hits 2`  
+- DJI detector: width 10–40 MHz, mean ≥ 8 dB  
+- FPV detector: width 4–12 MHz, peak ≥ 12 dB OR mean ≥ 6 dB  
 
 ---
 
-## How it works
+## ⚙️ How It Works
 
-1. **Streaming:** HackRF IQ → `read_samples(N)` via `libhackrf.py` wrapper.  
-2. **PSD:** Welch periodogram (Hann, nperseg=4096) → dB scale.  
-3. **Baseline/excess:** Rolling 20th percentile baseline; “hot” bins exceed by ΔdB.  
-4. **Grouping:** Contiguous hot regions → bandwidth, mean/peak excess.  
-5. **Classification:**
-   - **DJI:** width ≥ 10 MHz in DJI bands (2.4 or 5.8), persistent across frames.  
-   - **FPV:** width ≤ 12 MHz in FPV band (5.65–5.92 GHz), or floor rise alert (+10 dB).  
-6. **UI:** Curses TUI with event log & stats; fallback to status line if curses missing.  
+1. **Streaming** → HackRF IQ samples read via `libhackrf.py`.  
+2. **PSD** → Welch periodogram with Hann window.  
+3. **Baseline** → Rolling 20th percentile baseline, detect bins above ΔdB.  
+4. **Grouping** → Hot bins grouped into contiguous regions → bandwidth + stats.  
+5. **Classification**:  
+   - DJI: 10–40 MHz wide plateau, persistent across frames.  
+   - FPV: 4–12 MHz spikes or floor-rise +10 dB.  
+6. **UI** → Curses TUI event log + live stats (fallback: single status line).  
 
 ---
 
-## Troubleshooting
+## 🛠 Troubleshooting
 
-**“Error code -1000 when opening HackRF”**  
-- Another program may be using the device (close SDR apps).  
-- On WSL: ensure device is attached via `usbipd`.  
-- On Linux: confirm udev rules, replug USB, check `groups | grep plugdev`.  
-
-**`hackrf_info` not found / returns no device**  
-- Install HackRF packages (`hackrf`, `libhackrf0`, `libhackrf-dev`).  
-- On WSL, re-run `usbipd wsl list / attach`.  
-
-**`ModuleNotFoundError: windows-curses`**  
-- Only needed for Windows terminals. Install via:  
+- **Error -1000 opening HackRF** → Device busy. Close SDR apps or reattach with `usbipd`.  
+- **`hackrf_info` shows no device** → Install HackRF packages, replug device.  
+- **`ModuleNotFoundError: windows-curses`** → Only required for Windows. Install with:  
   ```bash
   pip install windows-curses
-  ```
-
-**“Could not find module 'libhackrf.so'”**  
-- You’re likely on native Windows. Use **WSL** as described above.  
-
-**No alerts / misclassification**  
-- Adjust gains: `--amp`, `--lna`, `--vga`.  
-- FPV analog: use `--auto fpv`.  
-- DJI: ensure video link is active.  
-- Thresholds: tweak `--delta-db`, `--mean-excess-db`.  
-- Sweep speed: increase dwell for stability (`--dwell 0.6`).  
+  ```  
+- **“Could not find module 'libhackrf.so'”** → Use WSL, not native Windows.  
+- **No alerts / wrong classification**:  
+  - Adjust `--amp`, `--lna`, `--vga`.  
+  - Ensure DJI link is active.  
+  - Loosen thresholds (`--delta-db 5`).  
+  - Increase `--dwell 0.6` for stability.  
 
 ---
 
-## Tips
+## 💡 Tips
 
-- Antenna proximity matters. Move a few meters away to reduce overload.  
-- **Sample rate trade-off:** 20 MS/s spans ~20 MHz; higher = wider but heavier CPU.  
-- **Overlap & dwell:** `--center-overlap 0.75` balances coverage vs speed.  
-- Logging:  
+- Don’t hold antenna too close — distance improves accuracy.  
+- Higher sample rates widen capture but require more CPU.  
+- Adjust overlap & dwell to balance **speed vs accuracy**.  
+- Log runs with:  
   ```bash
   python skyhunter.py --auto dji | tee run.log
   ```
 
+---
 
-Happy hunting.  
-If you want a packaged release (`pip install skyhunter-rf`) with prebuilt wheels later, say the word and I’ll prep the packaging scaffolding (setup, entry points, and CI).
+Happy hunting 🚁  
+
