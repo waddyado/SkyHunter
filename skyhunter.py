@@ -329,8 +329,9 @@ class RFStreamer:
         self.dev.center_freq = int(center_hz)
 
     def _to_complex64(self, iq):
+        # NumPy 2.0: np.array(..., copy=False) may raise. Use asarray to allow a copy if needed.
         try:
-            return np.array(iq, dtype=np.complex64, copy=False)
+            return np.asarray(iq, dtype=np.complex64)
         except TypeError:
             return np.asarray(iq, dtype=np.complex64)
 
@@ -584,4 +585,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
