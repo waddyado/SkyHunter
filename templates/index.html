@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SKYHUNTER V2 — RF Airspace Awareness</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <div class="header-left">
+        <button type="button" class="saves-toggle" id="saves-toggle" aria-label="Saves menu">≡ Saves</button>
+        <aside class="saves-panel" id="saves-panel" aria-hidden="true">
+          <div class="saves-panel-head">
+            <span>Saves &amp; Settings</span>
+            <button type="button" class="saves-close" id="saves-close" aria-label="Close">×</button>
+          </div>
+          <div class="saves-panel-body">
+            <div class="saves-section">
+              <label for="save-name">Save current scan</label>
+              <div class="saves-row">
+                <input type="text" id="save-name" class="save-name-input" placeholder="Session name" value="">
+                <button type="button" class="btn btn-save" id="save-btn">Save</button>
+              </div>
+            </div>
+            <div class="saves-section">
+              <label>Load session</label>
+              <p class="saves-section-desc">Select a save below, then choose Load (merge) to add its data to the current session, or Load (replace) to replace current data.</p>
+              <div id="saves-list" class="saves-list" role="listbox" aria-label="Saved sessions"></div>
+              <div id="saves-message" class="saves-message" aria-live="polite"></div>
+              <div class="saves-load-actions">
+                <button type="button" class="btn btn-load-merge" id="saves-load-merge" disabled>Load (merge)</button>
+                <button type="button" class="btn btn-load-replace" id="saves-load-replace" disabled>Load (replace)</button>
+                <button type="button" class="btn btn-delete-save" id="saves-delete" disabled>Delete selected</button>
+              </div>
+            </div>
+            <div class="saves-section">
+              <button type="button" class="btn btn-settings" id="settings-btn">Settings</button>
+            </div>
+          </div>
+        </aside>
+      </div>
+      <div class="logo">
+        <span class="logo-icon">◈</span>
+        <h1>SKYHUNTER <span class="v2">V2</span></h1>
+        <span class="tagline">RF AIRSPACE AWARENESS</span>
+      </div>
+      <a class="header-logo-link" href="https://www.speercyberdefense.com" target="_blank" rel="noopener noreferrer" title="Speer Cyber Defense">
+        <div class="header-logo-bubble" aria-hidden="true">
+          <div class="header-logo-bubble-inner">
+            <img id="speer-logo" src="" alt="Speer Cyber Defense" />
+          </div>
+        </div>
+      </a>
+      <div class="header-accent"></div>
+    </header>
+
+    <nav class="tabs">
+      <button class="tab active" data-tab="dashboard">Dashboard</button>
+      <button class="tab" data-tab="detections">Detections</button>
+      <button class="tab" data-tab="hackrf">HackRF</button>
+      <button class="tab" data-tab="adsb">ADS-B</button>
+    </nav>
+
+    <main class="panels">
+      <section id="panel-dashboard" class="panel active">
+        <div class="card hackrf-status">
+          <h2><span class="card-icon">▣</span> HackRF Status</h2>
+          <div class="status-grid">
+            <div class="status-row">
+              <span class="label">Device</span>
+              <span id="status-device" class="value status-badge">—</span>
+            </div>
+            <div class="status-row">
+              <span class="label">Mode</span>
+              <span id="status-mode" class="value">—</span>
+            </div>
+            <div class="status-row">
+              <span class="label">Bands (MHz)</span>
+              <span id="status-bands" class="value mono">—</span>
+            </div>
+            <div class="status-row">
+              <span class="label">Center</span>
+              <span id="status-center" class="value mono">—</span>
+            </div>
+            <div class="status-row">
+              <span class="label">Floor / Peak (dB)</span>
+              <span id="status-floor-peak" class="value mono">—</span>
+            </div>
+            <div class="status-row">
+              <span class="label">Min floor (dB)</span>
+              <span id="status-min-floor" class="value mono">—</span>
+            </div>
+            <div class="status-row">
+              <span class="label">Slice (MHz)</span>
+              <span id="status-slice" class="value mono">—</span>
+            </div>
+            <div class="status-row">
+              <span class="label">Error</span>
+              <span id="status-error" class="value error">—</span>
+            </div>
+          </div>
+        </div>
+        <div class="card rtl-status">
+          <h2><span class="card-icon">▤</span> ADS-B Device Status</h2>
+          <div class="status-grid">
+            <div class="status-row">
+              <span class="label">Device</span>
+              <span id="rtl-device" class="value status-badge">—</span>
+            </div>
+            <div class="status-row">
+              <span class="label">Count</span>
+              <span id="rtl-count" class="value mono">—</span>
+            </div>
+            <div class="status-row">
+              <span class="label">Error</span>
+              <span id="rtl-error" class="value error">—</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="panel-detections" class="panel">
+        <div class="detections-split">
+          <div class="detections-half detections-half-left">
+            <div class="card">
+              <h2><span class="card-icon">✈</span> Plane detections (ADS-B)</h2>
+              <p class="hint">Planes with position from ADS-B. Map loads tiles from OpenStreetMap.</p>
+              <div id="map-container" class="map-container"></div>
+              <div id="planes-list" class="planes-list"></div>
+            </div>
+          </div>
+          <div class="detections-separator" aria-hidden="true"></div>
+          <div class="detections-half detections-half-right">
+            <div class="card">
+              <h2><span class="card-icon">◇</span> Drone detections (HackRF)</h2>
+              <p class="hint">FPV, DJI, or unknown. Colored by type.</p>
+              <div id="detections-list" class="detections-list"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="panel-hackrf" class="panel">
+        <div class="card hackrf-spectrum-card">
+          <h2><span class="card-icon">▣</span> Raw spectral output</h2>
+          <p class="hint">Live PSD from HackRF (current band slice). Frequency (MHz) vs power (dB).</p>
+          <div class="spectrum-wrap">
+            <canvas id="hackrf-spectrum-canvas" class="spectrum-canvas" width="800" height="320"></canvas>
+          </div>
+        </div>
+        <div class="card hackrf-status-card">
+          <h2><span class="card-icon">▣</span> HackRF device stats</h2>
+          <div class="status-grid">
+            <div class="status-row">
+              <span class="label">Device</span>
+              <span id="hackrf-status-device" class="value status-badge">—</span>
+            </div>
+            <div class="status-row">
+              <span class="label">Mode</span>
+              <span id="hackrf-status-mode" class="value">—</span>
+            </div>
+            <div class="status-row">
+              <span class="label">Bands (MHz)</span>
+              <span id="hackrf-status-bands" class="value mono">—</span>
+            </div>
+            <div class="status-row">
+              <span class="label">Center</span>
+              <span id="hackrf-status-center" class="value mono">—</span>
+            </div>
+            <div class="status-row">
+              <span class="label">Floor / Peak (dB)</span>
+              <span id="hackrf-status-floor-peak" class="value mono">—</span>
+            </div>
+            <div class="status-row">
+              <span class="label">Min floor (dB)</span>
+              <span id="hackrf-status-min-floor" class="value mono">—</span>
+            </div>
+            <div class="status-row">
+              <span class="label">Slice (MHz)</span>
+              <span id="hackrf-status-slice" class="value mono">—</span>
+            </div>
+            <div class="status-row">
+              <span class="label">Error</span>
+              <span id="hackrf-status-error" class="value error">—</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="panel-adsb" class="panel">
+        <div class="card adsb-sdr-status-card">
+          <h2><span class="card-icon">▤</span> SDR status (ADS-B device)</h2>
+          <div class="status-grid">
+            <div class="status-row">
+              <span class="label">Device</span>
+              <span id="adsb-sdr-device" class="value status-badge">—</span>
+            </div>
+            <div class="status-row">
+              <span class="label">Count</span>
+              <span id="adsb-sdr-count" class="value mono">—</span>
+            </div>
+            <div class="status-row">
+              <span class="label">Error</span>
+              <span id="adsb-sdr-error" class="value error">—</span>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <h2><span class="card-icon">▤</span> ADS-B (RTL-SDR pipe)</h2>
+          <p class="hint">Pipe or paste ADS-B data from dump1090 / rtl_sdr. POST to <code>/api/adsb</code> or paste below.</p>
+          <div class="adsb-actions">
+            <textarea id="adsb-input" class="adsb-textarea" placeholder="Paste ADS-B lines or pipe: curl -X POST -d &quot;$(cat -)&quot; http://localhost:5050/api/adsb"></textarea>
+            <button id="adsb-submit" class="btn">Send lines</button>
+          </div>
+          <h3 class="adsb-raw-heading">Raw ADS-B detections (all)</h3>
+          <div id="adsb-list" class="adsb-list"></div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <span class="footer-text">Skyhunter V2 · Speer Cyber Defense</span>
+      <span id="ws-status" class="ws-status">Connecting…</span>
+    </footer>
+  </div>
+
+  <!-- Settings modal: overlay + centered box -->
+  <div id="settings-overlay" class="settings-overlay" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+    <div class="settings-backdrop" id="settings-backdrop"></div>
+    <div class="settings-box">
+      <header class="settings-header">
+        <h2 id="settings-title" class="settings-title">Settings</h2>
+        <button type="button" class="settings-close" id="settings-close" aria-label="Close settings">×</button>
+      </header>
+      <div class="settings-body">
+        <section class="settings-section" aria-labelledby="settings-appearance-heading">
+          <h3 id="settings-appearance-heading" class="settings-section-title">Appearance</h3>
+          <div class="settings-row">
+            <label for="setting-dark-theme" class="settings-label">Dark theme</label>
+            <div class="settings-toggle-wrap">
+              <input type="checkbox" id="setting-dark-theme" class="settings-toggle" checked aria-describedby="setting-dark-theme-desc">
+              <span class="settings-toggle-slider" aria-hidden="true"></span>
+            </div>
+            <span id="setting-dark-theme-desc" class="settings-desc">Use dark theme (off = light theme)</span>
+          </div>
+        </section>
+        <!-- Room to add more sections and options later -->
+      </div>
+      <footer class="settings-footer">
+        <button type="button" class="btn btn-settings-reset" id="settings-reset">Reset to defaults</button>
+        <button type="button" class="btn btn-settings-save" id="settings-save">Save</button>
+      </footer>
+    </div>
+  </div>
+
+  <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script src="/static/app.js"></script>
+</body>
+</html>

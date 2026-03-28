@@ -1,0 +1,45 @@
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# Saves (runtime data)
+saves/*.json
+
+# FAA data (large, user-downloaded; see data/README.md)
+data/MASTER.txt
+data/ACFTREF.txt
+
+# Optional: keep saves dir, ignore contents only
+# Uncomment if you want to track saves/ itself:
+# !saves/.gitkeep
+
+# IDE / editor
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local / secrets (do not commit)
+.env
+.env.local
+*.local
+
+# Dump1090 build artifacts (if you want to ignore them; repo may ship a binary)
+# dump1090/dump1090

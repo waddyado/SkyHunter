@@ -1,0 +1,33 @@
+---
+description: SkyHunter V2 project handoff — architecture, setup, run, docs, Git, and agent prefs
+alwaysApply: true
+---
+
+# SkyHunter V2 — project handoff
+
+Open-source RF airspace awareness: HackRF-based drone RF detection (DJI / FPV heuristics) plus ADS-B via dump1090 SBS on TCP port 30003, in one Flask + Socket.IO web UI (`web_ui.py`). Optional FAA offline identity from `data/*.txt`, optional watchlist alerts via `basestation.sqb` + `spy_plane_db.py`.
+
+**Branding:** Speer Cyber Defense is allowed where already present; do not remove it without asking.
+
+## Repo facts (verify in tree when unsure)
+
+- **Entry:** `web_ui.py` (server); `skyhunter.py` + `libhackrf.py` (RF); `adsb_listener.py` (localhost:30003).
+- **Setup:** `setup.sh` — `python3 -m venv --clear .venv`, pip install `requirements.txt`, then `scripts/fetch_faa_registry.py` (FAA ReleasableAircraft.zip → `data/`) unless `SKIP_FAA_DOWNLOAD=1`; `FAA_FETCH_FORCE=1` forces re-download. Then clones/builds `dump1090/` if git + Makefile exist.
+- **Run:** `run.sh` → `.venv/bin/python web_ui.py --host 0.0.0.0 --port 5050` (+ passthrough args).
+- **Map tiles:** Canonical script is `scripts/download_map_tiles.py` only (root `download_map_tiles.py` was removed). Needs `requests` for bulk download.
+- **GitHub:** Do not commit huge FAA files (e.g. MASTER/DEREG) — exceeds 100 MiB limit; fetch after clone. `.gitignore` reflects that.
+- **README:** `readme.md` is public-facing (includes Mermaid architecture — keep node labels simple: no `\n` inside `[]`, avoid fragile punctuation in labels for GitHub rendering).
+
+## Agent preferences
+
+- Run commands yourself when useful; match existing code style; minimal diffs unless the task needs more; do not invent features not in the repo.
+- Read nearby code before editing; extend existing patterns.
+- Setup/docs: align with `setup.sh`, `scripts/fetch_faa_registry.py`, and `readme.md`.
+- Git: remember SSH/HTTPS, correct GitHub account, and large-file limits.
+- Explain behavior with existing code citations: `startLine:endLine:path`.
+
+## First steps when orienting
+
+Skim `readme.md`, `setup.sh`, `web_ui.py` (top ~120 lines), and `spy_plane_db.py` docstring if the task touches watchlist/ADS-B alerts.
+
+**Project path (user may differ):** `D:\SkyHunter V2` or WSL `/mnt/d/SkyHunter V2`; this workspace: `SkyHunter-2` on Desktop.

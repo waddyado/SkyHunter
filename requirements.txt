@@ -1,0 +1,8 @@
+setuptools>=65.0.0
+numpy
+scipy
+flask>=2.0
+flask-socketio>=5.0
+python-socketio>=5.0
+# Pin <0.2.93 to avoid rtlsdr_set_dithering (requires newer system librtlsdr)
+pyrtlsdr>=0.2.0,<0.2.93
