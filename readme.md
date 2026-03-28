@@ -5,9 +5,8 @@
 </p>
 
 
-**RF airspace awareness in one dashboard** — live drone RF sensing with a **HackRF One**, plus **ADS-B** aircraft on a map, optional **FAA-backed identity** for planes, and optional **watchlist-style alerts** when an aircraft matches a BaseStation SQLite database. Built for Linux and **WSL 2** on Windows, with a modern web UI you can open from your laptop or phone on the LAN.
+**Unified RF airspace awareness** — detect drone signals with a **HackRF One**, track aircraft via **ADS-B**, enrich with **FAA data**, and trigger **watchlist alerts**—all in one real-time dashboard. Runs on Linux and **WSL 2** with a responsive web UI accessible across your LAN.
 
-> **Why it’s interesting:** Most tools pick *either* SDR hobby RF *or* flight tracking. SkyHunter V2 combines them so you can correlate what you hear in the spectrum with what’s overhead — useful for researchers, RF enthusiasts, airspace awareness, and anyone learning how 2.4/5.8 GHz drone links and 1090 MHz ADS-B fit together. No cloud account required; data stays on your machine.
 
 ---
 
