@@ -44,14 +44,6 @@
 
 ---
 
-## Screenshots
-
-<p align="center">
-  <img src="static/detections.PNG" width="900"/>
-</p>
-
----
-
 
 ## Architecture
 
@@ -251,6 +243,10 @@ See **`static/map-tiles/README.md`** for behavior details.
 | **External** | Run any compatible decoder that exposes SBS on **30003** — no need to use the bundled binary |
 
 RTL-SDR must be available to the OS where dump1090 runs. First bring-up after start can take **tens of seconds** before the port opens.
+
+<p align="center">
+  <img src="static/detections.PNG" width="900"/>
+</p>
 
 ---
 
