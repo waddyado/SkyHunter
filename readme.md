@@ -37,17 +37,10 @@
 - [Development notes](#development-notes)
 - [License & credits](#license--credits)
 
----
+--- 
 
-## Screenshots
-
-> *Add 2–4 screenshots here for maximum impact on GitHub / social — e.g. Dashboard, Detections map, HackRF spectrum, Alerts.*
->
-> Suggested paths (create `docs/` if you like):  
-> `docs/screenshots/dashboard.png` · `docs/screenshots/detections.png` · `docs/screenshots/hackrf.png` · `docs/screenshots/alerts.png`
->
 > ```markdown
-> ![Dashboard](docs/screenshots/dashboard.png)
+> ![Dashboard](static/hackrf.png)
 > ```
 
 ---
